@@ -61,12 +61,18 @@ public class Parameters {
     public static double ACCIDENT_DELTA_V_CONTACT = 0.5;   // m/s  ≈ 1.8 km/h
     public static double ACCIDENT_DELTA_V_MINOR   = 1.5;   // m/s  ≈ 5.4 km/h
     public static double ACCIDENT_DELTA_V_MAJOR   = 5.0;   // m/s  ≈ 18 km/h
-    public static double LATERAL_OVERLAP_FRACTION = 0.30;  // fraction of narrower vehicle width
+    public static double LATERAL_OVERLAP_FRACTION = 0.40;  // fraction of narrower vehicle width
     public static double NEARMISS_TTC_THRESHOLD   = 1.5;   // seconds
-    public static int    LANECHANGE_SWEEP_SAMPLES = 4;     // sub-checks during lateral move
+    public static int    LANECHANGE_SWEEP_SAMPLES = 1;     // sub-checks during lateral move
+
+    // --- Lane change specific tuning ---
+    public static double LANECHANGE_LOW_SPEED        = 2.0;   // m/s ≈ 7.2 km/h
+    public static double LANECHANGE_GAP_FACTOR       = 0.6;   // fraction of normal threshold at low speed
+    public static double LANECHANGE_MIN_GAP          = 0.10;  // m, absolute minimum extra gap
 
 
     static double totalTypesOfObjects = 4;
+
 
 
     static JSlider showProgressSlider;
