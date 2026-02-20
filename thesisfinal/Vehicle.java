@@ -2652,12 +2652,8 @@ public class Vehicle {
     }
     // Vehicle.java
     private boolean sweepLaneChangeSafety(Strip targetStrip) {
-        int samples = Math.max(1, Parameters.LANECHANGE_SWEEP_SAMPLES);
-        for (int k = 0; k < samples; k++) {
-            // If your target occupancy updates inside the loop, call occupyStrips() as needed
-            if (targetStrip.registerContactOrCrash(this)) return false; // unsafe, abort
-        }
-        return true; // safe
+        // Single logical check is enough here, geometry already filtered
+        return !targetStrip.registerContactOrCrash(this);
     }
 
 }
