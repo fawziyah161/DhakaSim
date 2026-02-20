@@ -490,16 +490,31 @@ public class Strip {
      *is enough space for a given vehicle forward movement.
      */
     boolean hasGapForStripChange(Vehicle subjectVehicle, Vehicle leader, Vehicle follower) {
-        double thresholdDistance = subjectVehicle.getThresholdDistance();
-        double lowerLimit1 = subjectVehicle.getDistanceInSegment() - thresholdDistance;
-        double upperLimit1 = subjectVehicle.getDistanceInSegment() + subjectVehicle.getLength() + thresholdDistance;
+        double baseThreshold = subjectVehicle.getThresholdDistance();
+        double v = subjectVehicle.getSpeed();
+
+// At low speeds, allow a tighter static envelope; at higher speeds keep full buffer
+        double effThreshold;
+        if (v < Parameters.LANECHANGE_LOW_SPEED) {
+            effThreshold = Math.max(
+                    Parameters.LANECHANGE_MIN_GAP,
+                    baseThreshold * Parameters.LANECHANGE_GAP_FACTOR
+            );
+        } else {
+            effThreshold = baseThreshold;
+        }
+
+        double lowerLimit1 = subjectVehicle.getDistanceInSegment() - effThreshold;
+        double upperLimit1 = subjectVehicle.getDistanceInSegment()
+                + subjectVehicle.getLength() + effThreshold;
 
         for (Vehicle vehicle : vehicleList) {
-            if (subjectVehicle == vehicle) {
-                continue;
-            }
-            double lowerLimit2 = vehicle.getDistanceInSegment() - thresholdDistance;
-            double upperLimit2 = vehicle.getDistanceInSegment() + vehicle.getLength() + thresholdDistance;
+            if (subjectVehicle == vehicle) continue;
+
+            double lowerLimit2 = vehicle.getDistanceInSegment() - effThreshold;
+            double upperLimit2 = vehicle.getDistanceInSegment()
+                    + vehicle.getLength() + effThreshold;
+
             if ((lowerLimit1 >= lowerLimit2 && lowerLimit1 <= upperLimit2
                     || upperLimit1 >= lowerLimit2 && upperLimit1 <= upperLimit2)
                     || (lowerLimit2 >= lowerLimit1 && lowerLimit2 <= upperLimit1
@@ -507,6 +522,7 @@ public class Strip {
                 return false;
             }
         }
+
         //____________________
         if (subjectVehicle.isReverseSegment()) {
             double lower = lowerLimit1;
@@ -550,6 +566,8 @@ public class Strip {
          Gipp's method is used for computing feasibility using velocity
          */
             boolean isNotFeasible;
+            // speed of the subject vehicle
+
         /*
          gap acceptance probability calculation variable
          https://www.civil.iitb.ac.in/tvm/nptel/534_LaneChange/web/web.html#x1-50002.2
@@ -562,8 +580,13 @@ public class Strip {
                     double speedWRTLeader = Vehicle.getSpeedForBraking(targetLeader, subjectVehicle);
                     double decelerationWRTLeader = (speedWRTLeader - subjectVehicle.getSpeed()) / Vehicle.TIME_STEP;
                     isNotFeasible = decelerationWRTLeader < subjectVehicle.getMaxBraking();
+
+
                 } else if (subjectVehicle.getDlcModel() == Parameters.DLC_MODEL.GHR_MODEL) {
-                    isNotFeasible = Vehicle.getAccelerationGHRModel(targetLeader, subjectVehicle) < subjectVehicle.getMaxBraking();
+                    isNotFeasible = Vehicle.getAccelerationGHRModel(targetLeader, subjectVehicle)
+                            < subjectVehicle.getMaxBraking();
+
+
                 } else {
                     // dummy
                     assert false;
@@ -592,9 +615,16 @@ public class Strip {
 
                 if (subjectVehicle.getDlcModel() == Parameters.DLC_MODEL.GIPPS_MODEL) {
                     double decelerationOfFollower = (speedOfFollower - targetFollower.getSpeed()) / Vehicle.TIME_STEP;
-                    isNotFeasible = isNotFeasible || (decelerationOfFollower < targetFollower.getMaxBraking());
+                    isNotFeasible = isNotFeasible
+                            || decelerationOfFollower < targetFollower.getMaxBraking();
+
+
                 } else if (subjectVehicle.getDlcModel() == Parameters.DLC_MODEL.GHR_MODEL) {
-                    isNotFeasible = isNotFeasible || (Vehicle.getAccelerationGHRModel(subjectVehicle, targetFollower) < targetFollower.getMaxBraking());
+                    isNotFeasible = isNotFeasible
+                            || Vehicle.getAccelerationGHRModel(subjectVehicle, targetFollower)
+                            < targetFollower.getMaxBraking();
+
+
                 }
 
                 // gap acceptance probability calculation
@@ -642,6 +672,7 @@ public class Strip {
 
             return condition1 && condition2;
         }
+
 
         return true;
     }
